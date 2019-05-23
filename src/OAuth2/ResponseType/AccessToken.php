@@ -93,8 +93,12 @@ class AccessToken implements AccessTokenInterface
      */
     public function createAccessToken($client_id, $user_id, $scope = null, $includeRefreshToken = true)
     {
+        do {
+            $accessToken = $this->generateAccessToken();
+        } while($this->tokenStorage->getAccessToken($accessToken));
+
         $token = array(
-            "access_token" => $this->generateAccessToken(),
+            "access_token" => $accessToken,
             "expires_in" => $this->config['access_lifetime'],
             "token_type" => $this->config['token_type'],
             "scope" => $scope
@@ -133,33 +137,33 @@ class AccessToken implements AccessTokenInterface
     protected function generateAccessToken()
     {
         if (function_exists('random_bytes')) {
-            $randomData = random_bytes(20);
-            if ($randomData !== false && strlen($randomData) === 20) {
+            $randomData = random_bytes(40);
+            if ($randomData !== false && strlen($randomData) === 40) {
                 return bin2hex($randomData);
             }
         }
         if (function_exists('openssl_random_pseudo_bytes')) {
-            $randomData = openssl_random_pseudo_bytes(20);
-            if ($randomData !== false && strlen($randomData) === 20) {
+            $randomData = openssl_random_pseudo_bytes(40);
+            if ($randomData !== false && strlen($randomData) === 40) {
                 return bin2hex($randomData);
             }
         }
         if (function_exists('mcrypt_create_iv')) {
-            $randomData = mcrypt_create_iv(20, MCRYPT_DEV_URANDOM);
-            if ($randomData !== false && strlen($randomData) === 20) {
+            $randomData = mcrypt_create_iv(40, MCRYPT_DEV_URANDOM);
+            if ($randomData !== false && strlen($randomData) === 40) {
                 return bin2hex($randomData);
             }
         }
         if (@file_exists('/dev/urandom')) { // Get 100 bytes of random data
-            $randomData = file_get_contents('/dev/urandom', false, null, 0, 20);
-            if ($randomData !== false && strlen($randomData) === 20) {
+            $randomData = file_get_contents('/dev/urandom', false, null, 0, 40);
+            if ($randomData !== false && strlen($randomData) === 40) {
                 return bin2hex($randomData);
             }
         }
         // Last resort which you probably should just get rid of:
         $randomData = mt_rand() . mt_rand() . mt_rand() . mt_rand() . microtime(true) . uniqid(mt_rand(), true);
 
-        return substr(hash('sha512', $randomData), 0, 40);
+        return substr(hash('sha512', $randomData), 0, 80);
     }
 
     /**
